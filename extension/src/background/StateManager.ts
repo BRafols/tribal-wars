@@ -2,7 +2,10 @@
 // This ensures state survives MV3 service worker suspension
 
 import { StorageKey, Timing } from '../shared/constants'
-import type { CoordinatorState, TabInfo, ScheduledTask, BotConfig } from '../shared/types'
+import type { CoordinatorState, TabInfo, ScheduledTask, BotConfig, ActionLogEntry, AutomationStatus } from '../shared/types'
+
+// Maximum number of action log entries to keep
+const MAX_ACTION_LOG_ENTRIES = 100
 
 // Default bot configuration
 const DEFAULT_CONFIG: BotConfig = {
@@ -29,12 +32,44 @@ const DEFAULT_STATE: CoordinatorState = {
   lastUpdated: Date.now(),
 }
 
+// Default automation status
+const DEFAULT_AUTOMATION_STATUS: AutomationStatus = {
+  scavenging: {
+    status: 'idle',
+    activeTiers: [],
+    nextCompletionTime: null,
+    lastStarted: null,
+  },
+  farming: {
+    status: 'idle',
+    targetsAvailable: 0,
+    lastAttackSent: null,
+    attacksToday: 0,
+  },
+  building: {
+    status: 'idle',
+    queueSlotsUsed: 0,
+    queueSlotsMax: 2,
+    nextCompletion: null,
+    lastQueuedBuilding: null,
+  },
+  recruiting: {
+    status: 'idle',
+    barracksQueue: 0,
+    stableQueue: 0,
+    workshopQueue: 0,
+    lastRecruitAction: null,
+  },
+}
+
 class StateManager {
   private state: CoordinatorState = DEFAULT_STATE
   private config: BotConfig = DEFAULT_CONFIG
   private dirty = false
   private persistIntervalId: ReturnType<typeof setInterval> | null = null
   private initialized = false
+  private actionLog: ActionLogEntry[] = []
+  private automationStatus: AutomationStatus = DEFAULT_AUTOMATION_STATUS
 
   async init(): Promise<void> {
     if (this.initialized) return
@@ -130,6 +165,71 @@ class StateManager {
 
   isFeatureEnabled(feature: keyof BotConfig['features']): boolean {
     return this.config.enabled && this.config.features[feature]
+  }
+
+  // ============ Action Log Management ============
+
+  getActionLog(): ActionLogEntry[] {
+    return this.actionLog
+  }
+
+  addActionLog(entry: Omit<ActionLogEntry, 'id' | 'timestamp'>): void {
+    const newEntry: ActionLogEntry = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      timestamp: Date.now(),
+      ...entry,
+    }
+    this.actionLog.unshift(newEntry)
+
+    // Keep only the last MAX_ACTION_LOG_ENTRIES
+    if (this.actionLog.length > MAX_ACTION_LOG_ENTRIES) {
+      this.actionLog = this.actionLog.slice(0, MAX_ACTION_LOG_ENTRIES)
+    }
+  }
+
+  clearActionLog(): void {
+    this.actionLog = []
+  }
+
+  // ============ Automation Status Management ============
+
+  getAutomationStatus(): AutomationStatus {
+    return this.automationStatus
+  }
+
+  updateAutomationStatus(updates: Partial<AutomationStatus>): void {
+    this.automationStatus = {
+      ...this.automationStatus,
+      ...updates,
+    }
+  }
+
+  updateScavengingStatus(updates: Partial<AutomationStatus['scavenging']>): void {
+    this.automationStatus.scavenging = {
+      ...this.automationStatus.scavenging,
+      ...updates,
+    }
+  }
+
+  updateFarmingStatus(updates: Partial<AutomationStatus['farming']>): void {
+    this.automationStatus.farming = {
+      ...this.automationStatus.farming,
+      ...updates,
+    }
+  }
+
+  updateBuildingStatus(updates: Partial<AutomationStatus['building']>): void {
+    this.automationStatus.building = {
+      ...this.automationStatus.building,
+      ...updates,
+    }
+  }
+
+  updateRecruitingStatus(updates: Partial<AutomationStatus['recruiting']>): void {
+    this.automationStatus.recruiting = {
+      ...this.automationStatus.recruiting,
+      ...updates,
+    }
   }
 
   // ============ Persistence ============

@@ -7,7 +7,8 @@
     "storage",
     "alarms",
     "tabs",
-    "notifications"
+    "notifications",
+    "sidePanel"
   ],
   "host_permissions": [
     "*://*.guerrastribales.es/*",
@@ -47,6 +48,9 @@
     "128": "icons/icon128.png"
   },
   "options_page": "src/options/index.html",
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
   "web_accessible_resources": [
     {
       "resources": ["src/page-scripts/*.js"],

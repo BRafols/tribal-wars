@@ -86,6 +86,12 @@ export const Timing = {
   FREE_COMPLETION_THRESHOLD_SECONDS: 180,
 } as const
 
+// Resource thresholds
+export const Threshold = {
+  // Minimum % of storage to keep after building (0-100)
+  BUILD_RESOURCE_THRESHOLD_PCT: 20,
+} as const
+
 // Storage keys for chrome.storage.local
 export const StorageKey = {
   TAB_REGISTRY: 'tw_bot_tab_registry',
@@ -118,6 +124,11 @@ export const MessageType = {
 
   // Error reporting
   ERROR_REPORT: 'error:report',
+
+  // Dashboard (side panel) communication
+  DASHBOARD_STATE_REQUEST: 'dashboard:state_request',
+  DASHBOARD_STATE_RESPONSE: 'dashboard:state_response',
+  DASHBOARD_TOGGLE_BOT: 'dashboard:toggle_bot',
 } as const
 
 export type MessageTypeValue = (typeof MessageType)[keyof typeof MessageType]

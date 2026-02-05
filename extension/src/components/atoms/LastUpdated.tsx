@@ -42,13 +42,13 @@ function formatTimeAgo(timestamp: number): string {
 }
 
 export function LastUpdated({ timestamp, className = '' }: LastUpdatedProps) {
-  const [, forceUpdate] = useState(0)
+  const [currentTime, setCurrentTime] = useState(() => Date.now())
   const tickerId = useId()
 
   // Update display using the popup ticker (every frame)
   useEffect(() => {
     const ticker = getTicker('popup')
-    ticker.register(`lastUpdated-${tickerId}`, () => forceUpdate(n => n + 1), 0, { priority: 100 })
+    ticker.register(`lastUpdated-${tickerId}`, () => setCurrentTime(Date.now()), 0, { priority: 100 })
 
     if (!ticker.isRunning()) {
       ticker.start()
@@ -68,7 +68,7 @@ export function LastUpdated({ timestamp, className = '' }: LastUpdatedProps) {
     )
   }
 
-  const msAgo = Date.now() - timestamp
+  const msAgo = currentTime - timestamp
 
   return (
     <div className={className} style={containerStyle}>

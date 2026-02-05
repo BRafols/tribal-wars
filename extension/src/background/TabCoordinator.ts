@@ -9,13 +9,18 @@ import type {
   ErrorReportPayload,
   ScheduledTask,
   TabRoleType,
+  DashboardState,
+  ActionLogEntry,
 } from '../shared/types'
 import {
   isCoordinatorMessage,
   isTabRegisterMessage,
   isTabHeartbeatMessage,
   isTaskCompleteMessage,
+  isDashboardStateRequestMessage,
+  isDashboardToggleBotMessage,
   createTaskExecuteMessage,
+  createDashboardStateResponseMessage,
 } from '../shared/messages'
 import { getStateManager } from './StateManager'
 import { getTabRegistry } from './TabRegistry'
@@ -147,6 +152,35 @@ class TabCoordinator {
 
     if (message.type === MessageType.ERROR_REPORT) {
       this.handleErrorReport(tabId, message.payload as ErrorReportPayload)
+      sendResponse({ received: true })
+      return true
+    }
+
+    // Dashboard state request (from side panel/popup)
+    if (isDashboardStateRequestMessage(message)) {
+      const response = createDashboardStateResponseMessage({ state: this.getDashboardState() })
+      sendResponse(response)
+      return true
+    }
+
+    // Dashboard toggle bot
+    if (isDashboardToggleBotMessage(message)) {
+      const stateManager = getStateManager()
+      if (message.payload.enabled) {
+        stateManager.setRunning(true)
+        stateManager.addActionLog({
+          level: 'info',
+          type: 'system',
+          message: 'Bot started',
+        })
+      } else {
+        stateManager.setRunning(false)
+        stateManager.addActionLog({
+          level: 'info',
+          type: 'system',
+          message: 'Bot stopped',
+        })
+      }
       sendResponse({ received: true })
       return true
     }
@@ -338,6 +372,48 @@ class TabCoordinator {
       tabCount: tabRegistry.getAllTabs().length,
       taskCount: taskScheduler.getPendingTaskCount(),
     }
+  }
+
+  getDashboardState(): DashboardState {
+    const stateManager = getStateManager()
+    const tabRegistry = getTabRegistry()
+    const taskScheduler = getTaskScheduler()
+
+    const tabs = tabRegistry.getAllTabs()
+    const tasks = taskScheduler.getPendingTasks()
+
+    // Determine current world and village from the first active tab
+    let currentWorld: string | null = null
+    let currentVillage: { id: number; name: string } | null = null
+
+    if (tabs.length > 0) {
+      const activeTab = tabs.find(t => t.isActive) || tabs[0]
+      currentWorld = activeTab.worldId
+      if (activeTab.villageId) {
+        currentVillage = {
+          id: activeTab.villageId,
+          name: `Village ${activeTab.villageId}`, // Will be updated with actual name from game data
+        }
+      }
+    }
+
+    return {
+      isRunning: stateManager.isRunning(),
+      connectionStatus: tabs.length > 0 ? 'connected' : 'disconnected',
+      currentWorld,
+      currentVillage,
+      automationStatus: stateManager.getAutomationStatus(),
+      taskQueue: tasks.slice(0, 10), // Return only first 10 tasks for dashboard
+      actionLog: stateManager.getActionLog().slice(0, 20), // Return last 20 log entries
+      tabs,
+      lastUpdated: Date.now(),
+    }
+  }
+
+  // Add action log entry
+  addActionLog(entry: Omit<ActionLogEntry, 'id' | 'timestamp'>): void {
+    const stateManager = getStateManager()
+    stateManager.addActionLog(entry)
   }
 }
 

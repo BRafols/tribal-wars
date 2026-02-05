@@ -1,1 +1,8 @@
 export { WorldInfoCard } from './WorldInfoCard'
+export { DashboardHeader } from './DashboardHeader'
+export { AutomationStatusCard } from './AutomationStatusCard'
+export { AutomationStatusSection } from './AutomationStatusSection'
+export { TaskQueueSection } from './TaskQueueSection'
+export { ActionLogSection } from './ActionLogSection'
+export { ActiveTabsSection } from './ActiveTabsSection'
+export { Dashboard } from './Dashboard'
