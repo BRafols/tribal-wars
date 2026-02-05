@@ -110,7 +110,7 @@ class GameDataService {
    * Request a data update from the page
    */
   requestUpdate(): void {
-    window.postMessage({ type: 'TW_BOT_REQUEST_DATA' }, '*')
+    window.postMessage({ type: 'TW_BOT_REQUEST_GAME_DATA' }, '*')
   }
 
   /**
@@ -193,51 +193,25 @@ class GameDataService {
 
   /**
    * Inject script into page context to read game_data
+   * Uses shared external script to avoid CSP inline script violations
    */
   private injectReader(): void {
+    // Check if script is already injected (shared with BuildingQueueService)
+    if (document.getElementById('tw-bot-page-script')) {
+      console.log('GameDataService: Page script already injected')
+      return
+    }
+
     const script = document.createElement('script')
-    script.textContent = `
-      (function() {
-        function sendGameData() {
-          if (!window.game_data) return;
-
-          const data = {
-            player: {
-              name: window.game_data.player.name,
-              rank: window.game_data.player.rank,
-              points: window.game_data.player.points
-            },
-            village: {
-              name: window.game_data.village.name,
-              coord: window.game_data.village.coord,
-              wood: window.game_data.village.wood,
-              stone: window.game_data.village.stone,
-              iron: window.game_data.village.iron,
-              storage_max: window.game_data.village.storage_max,
-              pop: window.game_data.village.pop,
-              pop_max: window.game_data.village.pop_max,
-              wood_prod: window.game_data.village.wood_prod,
-              stone_prod: window.game_data.village.stone_prod,
-              iron_prod: window.game_data.village.iron_prod
-            },
-            world: window.game_data.world
-          };
-          window.postMessage({ type: 'TW_BOT_GAME_DATA', data: data }, '*');
-        }
-
-        // Send immediately
-        sendGameData();
-
-        // Respond to requests
-        window.addEventListener('message', function(event) {
-          if (event.data && event.data.type === 'TW_BOT_REQUEST_DATA') {
-            sendGameData();
-          }
-        });
-      })();
-    `
+    script.id = 'tw-bot-page-script'
+    script.src = chrome.runtime.getURL('src/page-scripts/game-data-reader.js')
+    script.onload = () => {
+      console.log('GameDataService: Page script loaded successfully')
+    }
+    script.onerror = (error) => {
+      console.error('GameDataService: Failed to load page script:', error)
+    }
     document.documentElement.appendChild(script)
-    script.remove()
   }
 }
 

@@ -44,5 +44,17 @@
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["src/page-scripts/*.js"],
+      "matches": [
+        "*://*.guerrastribales.es/*",
+        "*://*.tribalwars.net/*",
+        "*://*.tribalwars.com/*",
+        "*://*.die-staemme.de/*",
+        "*://*.triburile.ro/*"
+      ]
+    }
+  ]
 }

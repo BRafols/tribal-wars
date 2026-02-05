@@ -105,6 +105,7 @@ class BuildingQueueService {
   private checkForFreeCompletion(): void {
     if (!this.data || this.data.queue.length === 0) return
 
+    console.log('checkForFreeCompletion')
     // Only check on the building screen
     if (this.data.screen !== 'main') {
       console.log('BuildingQueueService: Not on building screen, skipping auto-complete check')
@@ -153,118 +154,25 @@ class BuildingQueueService {
 
   /**
    * Inject script into page context to read building queue data
+   * Uses external script file to avoid CSP inline script violations
    */
   private injectReader(): void {
+    // Check if script is already injected
+    if (document.getElementById('tw-bot-page-script')) {
+      console.log('BuildingQueueService: Page script already injected')
+      return
+    }
+
     const script = document.createElement('script')
-    script.textContent = `
-      (function() {
-        function getBuildingQueueData() {
-          // Check if we have access to the required objects
-          if (!window.game_data) return null;
-
-          const data = {
-            screen: window.game_data.screen || '',
-            villageId: window.game_data.village?.id || 0,
-            orderCount: 0,
-            serverTime: Math.floor(Date.now() / 1000),
-            queue: []
-          };
-
-          // Get server time if available
-          if (window.Timing && window.Timing.initial_server_time) {
-            // Timing.initial_server_time is in milliseconds
-            data.serverTime = Math.floor(window.Timing.initial_server_time / 1000);
-          }
-
-          // Get order count if BuildingMain exists
-          if (window.BuildingMain && typeof window.BuildingMain.order_count !== 'undefined') {
-            data.orderCount = window.BuildingMain.order_count;
-          }
-
-          // Get timer data if Timing exists
-          if (window.Timing &&
-              window.Timing.tickHandlers &&
-              window.Timing.tickHandlers.timers &&
-              window.Timing.tickHandlers.timers._timers) {
-
-            const timers = window.Timing.tickHandlers.timers._timers;
-            const currentTime = Math.floor(Date.now() / 1000);
-
-            // Timers are 1-indexed, building queue starts at index 1
-            for (let i = 1; i <= data.orderCount; i++) {
-              const timer = timers[i];
-              if (timer && timer.end) {
-                const remainingSeconds = timer.end - currentTime;
-                data.queue.push({
-                  index: i,
-                  endTimestamp: timer.end,
-                  remainingSeconds: remainingSeconds
-                });
-              }
-            }
-          }
-
-          return data;
-        }
-
-        function sendBuildingQueueData() {
-          const data = getBuildingQueueData();
-          window.postMessage({ type: 'TW_BOT_BUILDING_QUEUE_DATA', data: data }, '*');
-        }
-
-        function clickFreeCompletionButton() {
-          // Look for the "Finalizar" button in the building queue
-          // The button is an <a> element with href="#" and text "Finalizar"
-          const buildQueue = document.querySelector('#buildqueue, .buildorder_gui');
-          if (!buildQueue) {
-            console.log('TW Bot: Build queue element not found');
-            return false;
-          }
-
-          // Find all links in the queue
-          const links = buildQueue.querySelectorAll('a[href="#"]');
-
-          for (const link of links) {
-            // Check if the link text contains "Finalizar" (case-insensitive)
-            const text = link.textContent?.trim() || '';
-            if (text.toLowerCase() === 'finalizar') {
-              console.log('TW Bot: Found "Finalizar" button, clicking...');
-              link.click();
-              return true;
-            }
-          }
-
-          // Alternative: look for the button by class if it has a specific class
-          const finalizarBtn = buildQueue.querySelector('a.btn-instant-free, a[class*="instant"]');
-          if (finalizarBtn) {
-            console.log('TW Bot: Found instant completion button by class, clicking...');
-            finalizarBtn.click();
-            return true;
-          }
-
-          console.log('TW Bot: "Finalizar" button not found (may not be available yet)');
-          return false;
-        }
-
-        // Send data immediately
-        sendBuildingQueueData();
-
-        // Respond to requests
-        window.addEventListener('message', function(event) {
-          if (!event.data) return;
-
-          if (event.data.type === 'TW_BOT_REQUEST_BUILDING_QUEUE') {
-            sendBuildingQueueData();
-          }
-
-          if (event.data.type === 'TW_BOT_CLICK_FREE_COMPLETION') {
-            clickFreeCompletionButton();
-          }
-        });
-      })();
-    `
+    script.id = 'tw-bot-page-script'
+    script.src = chrome.runtime.getURL('src/page-scripts/game-data-reader.js')
+    script.onload = () => {
+      console.log('BuildingQueueService: Page script loaded successfully')
+    }
+    script.onerror = (error) => {
+      console.error('BuildingQueueService: Failed to load page script:', error)
+    }
     document.documentElement.appendChild(script)
-    script.remove()
   }
 }
 
