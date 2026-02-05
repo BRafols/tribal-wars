@@ -1,6 +1,6 @@
 import type { ReactNode, CSSProperties } from 'react'
 
-type TextVariant = 'title' | 'subtitle' | 'body' | 'caption' | 'label'
+export type TextVariant = 'title' | 'subtitle' | 'body' | 'caption' | 'label' | 'heading' | 'subheading'
 type TextColor = 'primary' | 'secondary' | 'muted' | 'success' | 'warning' | 'error'
 
 interface TextProps {
@@ -15,6 +15,8 @@ interface TextProps {
 const variantStyles: Record<TextVariant, CSSProperties> = {
   title: { fontSize: '1.25rem', fontWeight: 600, margin: 0 },
   subtitle: { fontSize: '1rem', fontWeight: 500, margin: 0 },
+  heading: { fontSize: '1rem', fontWeight: 600, margin: 0 },
+  subheading: { fontSize: '0.875rem', fontWeight: 600, margin: 0 },
   body: { fontSize: '0.875rem', fontWeight: 400, margin: 0 },
   caption: { fontSize: '0.75rem', fontWeight: 400, margin: 0 },
   label: { fontSize: '0.75rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 },

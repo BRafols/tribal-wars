@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { StorageKey, Timing } from '../shared/constants'
 import type { BotConfig, TabInfo, ScheduledTask } from '../shared/types'
+import { BuildQueuePanel } from '../components/organisms'
 
 const DEFAULT_CONFIG: BotConfig = {
   enabled: true,
@@ -239,6 +240,11 @@ function Options() {
             </label>
           </div>
         </div>
+      </section>
+
+      {/* Build Queue Section */}
+      <section className="section">
+        <BuildQueuePanel />
       </section>
 
       {/* Timing Settings */}
