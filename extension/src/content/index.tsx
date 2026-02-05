@@ -2,7 +2,7 @@
 // Runs on game pages and manages game data extraction and tab coordination
 
 import type { Message } from '../types/game'
-import { getGameDataService, getBuildingQueueService } from '../core'
+import { getGameDataService, getBuildingQueueService, getRecruitmentService } from '../core'
 import { getTabAgent } from './TabAgent'
 import { getScavengeService, getFarmService } from './services'
 
@@ -20,6 +20,9 @@ gameDataService.init()
 const buildingQueueService = getBuildingQueueService()
 buildingQueueService.init()
 
+// Initialize the recruitment service for auto-recruiting units
+const recruitmentService = getRecruitmentService()
+recruitmentService.init()
 // Initialize page-specific services based on current screen
 const currentUrl = window.location.href
 
@@ -49,6 +52,12 @@ buildingQueueService.subscribe((data) => {
   }
 })
 
+// Log recruitment service status (for debugging)
+recruitmentService.subscribe((data) => {
+  console.log('Recruitment data updated:', data)
+})
+
+// Notify background that the game page is loaded
 // Notify background that the game page is loaded (legacy support)
 chrome.runtime.sendMessage({ type: 'GAME_READY', payload: { url: window.location.href } })
 

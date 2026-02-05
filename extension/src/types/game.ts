@@ -67,3 +67,34 @@ export interface BuildingQueueData {
   serverTime: number      // Current server time (seconds)
   queue: BuildingQueueItem[]
 }
+
+// Recruitment types
+export type UnitType = 'spear' | 'sword' | 'axe' | 'archer' | 'spy' | 'light' | 'marcher' | 'heavy' | 'ram' | 'catapult' | 'knight' | 'snob'
+
+export type BuildingType = 'barracks' | 'stable' | 'garage'
+
+export interface UnitConfig {
+  unitType: UnitType
+  building: BuildingType
+  priority: number
+}
+
+export interface RecruitmentQueueItem {
+  building: BuildingType
+  unitType: string
+  count: number
+}
+
+export interface VillageRecruitmentData {
+  villageId: number
+  villageName: string
+  buildings: Record<BuildingType, number>
+  queue: RecruitmentQueueItem[]
+}
+
+export interface RecruitmentData {
+  screen: string
+  mode: string
+  groupId: string | null
+  villages: VillageRecruitmentData[]
+}

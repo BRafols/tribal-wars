@@ -1,3 +1,4 @@
 export { Ticker, getTicker, getContentTicker, type TickCallback } from './Ticker'
 export { getGameDataService } from './GameDataService'
 export { getBuildingQueueService } from './BuildingQueueService'
+export { getRecruitmentService } from './RecruitmentService'
