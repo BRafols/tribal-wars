@@ -9,6 +9,8 @@ import type {
   TaskCompletePayload,
   TabNavigatePayload,
   ErrorReportPayload,
+  DashboardStateRequestPayload,
+  DashboardStateResponsePayload,
 } from './types'
 
 // Create a typed message with timestamp
@@ -87,4 +89,30 @@ export function isTaskCompleteMessage(message: CoordinatorMessage): message is C
 
 export function isTabNavigateMessage(message: CoordinatorMessage): message is CoordinatorMessage<TabNavigatePayload> {
   return message.type === MessageType.TAB_NAVIGATE
+}
+
+// ============ Dashboard Messages ============
+
+export function createDashboardStateRequestMessage(): CoordinatorMessage<DashboardStateRequestPayload> {
+  return createMessage(MessageType.DASHBOARD_STATE_REQUEST, {})
+}
+
+export function createDashboardStateResponseMessage(payload: DashboardStateResponsePayload): CoordinatorMessage<DashboardStateResponsePayload> {
+  return createMessage(MessageType.DASHBOARD_STATE_RESPONSE, payload)
+}
+
+export function createDashboardToggleBotMessage(enabled: boolean): CoordinatorMessage<{ enabled: boolean }> {
+  return createMessage(MessageType.DASHBOARD_TOGGLE_BOT, { enabled })
+}
+
+export function isDashboardStateRequestMessage(message: CoordinatorMessage): message is CoordinatorMessage<DashboardStateRequestPayload> {
+  return message.type === MessageType.DASHBOARD_STATE_REQUEST
+}
+
+export function isDashboardStateResponseMessage(message: CoordinatorMessage): message is CoordinatorMessage<DashboardStateResponsePayload> {
+  return message.type === MessageType.DASHBOARD_STATE_RESPONSE
+}
+
+export function isDashboardToggleBotMessage(message: CoordinatorMessage): message is CoordinatorMessage<{ enabled: boolean }> {
+  return message.type === MessageType.DASHBOARD_TOGGLE_BOT
 }

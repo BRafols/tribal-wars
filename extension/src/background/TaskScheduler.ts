@@ -123,6 +123,17 @@ class TaskScheduler {
     return getStateManager().getTasks().length
   }
 
+  getPendingTasks(): ScheduledTask[] {
+    const tasks = getStateManager().getTasks()
+    // Sort by priority then by scheduled time
+    return [...tasks].sort((a, b) => {
+      if (a.priority !== b.priority) {
+        return a.priority - b.priority
+      }
+      return a.scheduledTime - b.scheduledTime
+    })
+  }
+
   // ============ Task Lifecycle ============
 
   markTaskProcessing(taskId: string): ScheduledTask | null {

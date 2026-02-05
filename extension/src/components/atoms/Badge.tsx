@@ -6,6 +6,7 @@ interface BadgeProps {
   children: ReactNode
   variant?: BadgeVariant
   className?: string
+  style?: CSSProperties
 }
 
 const variantStyles: Record<BadgeVariant, CSSProperties> = {
@@ -24,9 +25,9 @@ const baseStyle: CSSProperties = {
   fontWeight: 500,
 }
 
-export function Badge({ children, variant = 'default', className = '' }: BadgeProps) {
+export function Badge({ children, variant = 'default', className = '', style }: BadgeProps) {
   return (
-    <span className={className} style={{ ...baseStyle, ...variantStyles[variant] }}>
+    <span className={className} style={{ ...baseStyle, ...variantStyles[variant], ...style }}>
       {children}
     </span>
   )

@@ -181,3 +181,72 @@ export interface FarmState {
   totalPages: number
   lastChecked: number
 }
+
+// Action Log types for side panel dashboard
+export type ActionLogLevel = 'success' | 'error' | 'info' | 'warning'
+
+export interface ActionLogEntry {
+  id: string
+  timestamp: number
+  level: ActionLogLevel
+  type: string // e.g., 'scavenge', 'farm', 'build', 'recruit', 'tab', 'system'
+  message: string
+  villageId?: number
+  details?: Record<string, unknown>
+}
+
+// Automation status for each feature
+export interface AutomationStatus {
+  scavenging: {
+    status: 'running' | 'idle' | 'disabled'
+    activeTiers: number[]
+    nextCompletionTime: number | null
+    lastStarted: number | null
+  }
+  farming: {
+    status: 'running' | 'idle' | 'disabled'
+    targetsAvailable: number
+    lastAttackSent: number | null
+    attacksToday: number
+  }
+  building: {
+    status: 'running' | 'idle' | 'disabled'
+    queueSlotsUsed: number
+    queueSlotsMax: number
+    nextCompletion: number | null
+    lastQueuedBuilding: string | null
+  }
+  recruiting: {
+    status: 'running' | 'idle' | 'disabled'
+    barracksQueue: number
+    stableQueue: number
+    workshopQueue: number
+    lastRecruitAction: number | null
+  }
+}
+
+// Dashboard state for side panel
+export interface DashboardState {
+  isRunning: boolean
+  connectionStatus: 'connected' | 'disconnected' | 'connecting'
+  currentWorld: string | null
+  currentVillage: {
+    id: number
+    name: string
+  } | null
+  automationStatus: AutomationStatus
+  taskQueue: ScheduledTask[]
+  actionLog: ActionLogEntry[]
+  tabs: TabInfo[]
+  lastUpdated: number
+}
+
+// Dashboard state request/response payloads
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface DashboardStateRequestPayload {
+  // Empty for now, could add filters later
+}
+
+export interface DashboardStateResponsePayload {
+  state: DashboardState
+}
