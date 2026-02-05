@@ -1,12 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Tribal Wars Bot",
-  "version": "0.1.0",
-  "description": "Automation assistant for Tribal Wars",
+  "version": "0.2.0",
+  "description": "Automation assistant for Tribal Wars with multi-tab coordination",
   "permissions": [
     "storage",
     "alarms",
-    "tabs"
+    "tabs",
+    "notifications"
   ],
   "host_permissions": [
     "*://*.guerrastribales.es/*",
@@ -45,6 +46,7 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
+  "options_page": "src/options/index.html",
   "web_accessible_resources": [
     {
       "resources": ["src/page-scripts/*.js"],
