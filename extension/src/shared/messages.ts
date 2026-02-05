@@ -116,3 +116,47 @@ export function isDashboardStateResponseMessage(message: CoordinatorMessage): me
 export function isDashboardToggleBotMessage(message: CoordinatorMessage): message is CoordinatorMessage<{ enabled: boolean }> {
   return message.type === MessageType.DASHBOARD_TOGGLE_BOT
 }
+
+// ============ Smart Farm Coordination Messages ============
+
+export interface FarmRegisterArrivalPayload {
+  targetCoords: string
+  arrivalTime: number
+  sourceVillageId: number
+}
+
+export interface FarmGetArrivalsPayload {
+  targetCoords?: string // Optional: get arrivals for specific target, or all if not specified
+}
+
+export interface FarmArrivalsResponsePayload {
+  arrivals: Record<string, number> // targetCoords -> lastArrivalTime
+}
+
+export function createFarmRegisterArrivalMessage(payload: FarmRegisterArrivalPayload): CoordinatorMessage<FarmRegisterArrivalPayload> {
+  return createMessage(MessageType.FARM_REGISTER_ARRIVAL, payload)
+}
+
+export function createFarmGetArrivalsMessage(payload: FarmGetArrivalsPayload = {}): CoordinatorMessage<FarmGetArrivalsPayload> {
+  return createMessage(MessageType.FARM_GET_ARRIVALS, payload)
+}
+
+export function createFarmArrivalsResponseMessage(payload: FarmArrivalsResponsePayload): CoordinatorMessage<FarmArrivalsResponsePayload> {
+  return createMessage(MessageType.FARM_ARRIVALS_RESPONSE, payload)
+}
+
+export function createFarmClearArrivalsMessage(): CoordinatorMessage<undefined> {
+  return createMessage(MessageType.FARM_CLEAR_ARRIVALS, undefined)
+}
+
+export function isFarmRegisterArrivalMessage(message: CoordinatorMessage): message is CoordinatorMessage<FarmRegisterArrivalPayload> {
+  return message.type === MessageType.FARM_REGISTER_ARRIVAL
+}
+
+export function isFarmGetArrivalsMessage(message: CoordinatorMessage): message is CoordinatorMessage<FarmGetArrivalsPayload> {
+  return message.type === MessageType.FARM_GET_ARRIVALS
+}
+
+export function isFarmClearArrivalsMessage(message: CoordinatorMessage): message is CoordinatorMessage<undefined> {
+  return message.type === MessageType.FARM_CLEAR_ARRIVALS
+}

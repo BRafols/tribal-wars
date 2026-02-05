@@ -103,6 +103,9 @@ export const StorageKey = {
   LAST_ACTION_TIME: 'tw_bot_last_action_time',
   VILLAGE_SETTINGS: 'tw_bot_village_settings',
   BUILD_QUEUE_CONFIG: 'tw_bot_build_queue_config',
+  FARM_STATE: 'tw_bot_farm_state',
+  UNIT_INFO: 'tw_bot_unit_info',
+  WORLD_CONFIG: 'tw_bot_world_config',
 } as const
 
 // Message types for service worker <-> content script communication
@@ -133,6 +136,12 @@ export const MessageType = {
   DASHBOARD_STATE_REQUEST: 'dashboard:state_request',
   DASHBOARD_STATE_RESPONSE: 'dashboard:state_response',
   DASHBOARD_TOGGLE_BOT: 'dashboard:toggle_bot',
+
+  // Smart Farm coordination
+  FARM_REGISTER_ARRIVAL: 'farm:register_arrival',
+  FARM_GET_ARRIVALS: 'farm:get_arrivals',
+  FARM_ARRIVALS_RESPONSE: 'farm:arrivals_response',
+  FARM_CLEAR_ARRIVALS: 'farm:clear_arrivals',
 } as const
 
 export type MessageTypeValue = (typeof MessageType)[keyof typeof MessageType]

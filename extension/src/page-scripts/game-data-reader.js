@@ -672,6 +672,138 @@
     }
   }
 
+  // ============ SMART FARM ASSISTANT ============
+
+  /**
+   * Get world configuration from interface
+   */
+  function getWorldConfig() {
+    const config = {
+      speed: 1,
+      unitSpeed: 1,
+      worldId: ''
+    };
+
+    // Get world ID from game_data
+    if (window.game_data && window.game_data.world) {
+      config.worldId = window.game_data.world;
+    }
+
+    // Try to get speed from world config (if loaded)
+    if (window.TribalWars && window.TribalWars.worldConfig) {
+      config.speed = parseFloat(window.TribalWars.worldConfig.speed) || 1;
+      config.unitSpeed = parseFloat(window.TribalWars.worldConfig.unit_speed) || 1;
+    }
+
+    // Alternative: check for speed in URL or page
+    const speedMatch = document.body.innerHTML.match(/speed["\s:]+(\d+\.?\d*)/i);
+    if (speedMatch && !config.speed) {
+      config.speed = parseFloat(speedMatch[1]) || 1;
+    }
+
+    return config;
+  }
+
+  function sendWorldConfig() {
+    const config = getWorldConfig();
+    window.postMessage({ type: 'TW_BOT_WORLD_CONFIG', data: config }, '*');
+  }
+
+  /**
+   * Get farm templates from Accountmanager
+   */
+  function getFarmTemplates() {
+    const templates = { A: null, B: null };
+
+    // Check if Accountmanager.farm exists
+    if (window.Accountmanager && window.Accountmanager.farm) {
+      const farm = window.Accountmanager.farm;
+
+      // Parse template A
+      if (farm.templates && farm.templates.a) {
+        templates.A = {};
+        for (const [unit, count] of Object.entries(farm.templates.a)) {
+          if (count && parseInt(count) > 0) {
+            templates.A[unit] = parseInt(count);
+          }
+        }
+      }
+
+      // Parse template B
+      if (farm.templates && farm.templates.b) {
+        templates.B = {};
+        for (const [unit, count] of Object.entries(farm.templates.b)) {
+          if (count && parseInt(count) > 0) {
+            templates.B[unit] = parseInt(count);
+          }
+        }
+      }
+    }
+
+    // Fallback: try to parse from page inputs
+    if (!templates.A && !templates.B) {
+      // Look for farm template inputs on the page
+      const templateInputsA = document.querySelectorAll('input[name^="template_a["]');
+      const templateInputsB = document.querySelectorAll('input[name^="template_b["]');
+
+      if (templateInputsA.length > 0) {
+        templates.A = {};
+        templateInputsA.forEach(input => {
+          const match = input.name.match(/template_a\[(\w+)\]/);
+          if (match && input.value && parseInt(input.value) > 0) {
+            templates.A[match[1]] = parseInt(input.value);
+          }
+        });
+      }
+
+      if (templateInputsB.length > 0) {
+        templates.B = {};
+        templateInputsB.forEach(input => {
+          const match = input.name.match(/template_b\[(\w+)\]/);
+          if (match && input.value && parseInt(input.value) > 0) {
+            templates.B[match[1]] = parseInt(input.value);
+          }
+        });
+      }
+    }
+
+    return templates;
+  }
+
+  function sendFarmTemplates() {
+    const templates = getFarmTemplates();
+    window.postMessage({ type: 'TW_BOT_FARM_TEMPLATES', data: templates }, '*');
+  }
+
+  /**
+   * Get current units available for farming
+   */
+  function getCurrentFarmUnits() {
+    const units = {};
+
+    // Check Accountmanager.farm.current_units
+    if (window.Accountmanager && window.Accountmanager.farm && window.Accountmanager.farm.current_units) {
+      return window.Accountmanager.farm.current_units;
+    }
+
+    // Fallback: parse from page
+    const unitCells = document.querySelectorAll('.unit_count, [id^="units_"][id$="_count"]');
+    unitCells.forEach(cell => {
+      const idMatch = cell.id?.match(/units_(\w+)_count/);
+      if (idMatch) {
+        const count = parseInt(cell.textContent) || 0;
+        units[idMatch[1]] = count;
+      }
+    });
+
+    return units;
+  }
+
+  function sendCurrentFarmUnits() {
+    const units = getCurrentFarmUnits();
+    window.postMessage({ type: 'TW_BOT_FARM_UNITS', data: units }, '*');
+  }
+
   // ============ MESSAGE HANDLER ============
 
   window.addEventListener('message', function(event) {
@@ -706,6 +838,15 @@
         if (event.data.data && event.data.data.buildingId) {
           queueBuilding(event.data.data.buildingId, event.data.data.resourceThreshold);
         }
+        break;
+      case 'TW_BOT_REQUEST_WORLD_CONFIG':
+        sendWorldConfig();
+        break;
+      case 'TW_BOT_REQUEST_FARM_TEMPLATES':
+        sendFarmTemplates();
+        break;
+      case 'TW_BOT_REQUEST_FARM_UNITS':
+        sendCurrentFarmUnits();
         break;
     }
   });

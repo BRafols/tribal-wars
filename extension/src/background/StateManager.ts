@@ -43,8 +43,10 @@ const DEFAULT_AUTOMATION_STATUS: AutomationStatus = {
   farming: {
     status: 'idle',
     targetsAvailable: 0,
+    scheduledAttacks: 0,
     lastAttackSent: null,
     attacksToday: 0,
+    nextScheduledArrival: null,
   },
   building: {
     status: 'idle',

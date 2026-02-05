@@ -2,7 +2,7 @@
 // Runs on game pages and manages game data extraction and tab coordination
 
 import type { Message } from '../types/game'
-import { getGameDataService, getBuildingQueueService, getRecruitmentService } from '../core'
+import { getGameDataService, getBuildingQueueService, getRecruitmentService, getSmartFarmService } from '../core'
 import { getTabAgent } from './TabAgent'
 import { getScavengeService, getFarmService } from './services'
 
@@ -38,6 +38,11 @@ if (currentUrl.includes('screen=am_farm')) {
   const farmService = getFarmService()
   farmService.init()
   console.log('FarmService initialized')
+
+  // Initialize smart farm service for intelligent attack scheduling
+  const smartFarmService = getSmartFarmService()
+  smartFarmService.init()
+  console.log('SmartFarmService initialized')
 }
 
 // Log data updates (for debugging)

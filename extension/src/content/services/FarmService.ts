@@ -113,7 +113,10 @@ class FarmService {
       const villageId = parseInt(villageIdMatch[1], 10)
 
       // Extract coordinates from link text
-      const coords = villageLink.textContent?.match(/\((\d+\|\d+)\)/)?.[1] || ''
+      const coordsMatch = villageLink.textContent?.match(/\((\d+)\|(\d+)\)/)
+      const coords = coordsMatch ? `${coordsMatch[1]}|${coordsMatch[2]}` : ''
+      const x = coordsMatch ? parseInt(coordsMatch[1], 10) : 0
+      const y = coordsMatch ? parseInt(coordsMatch[2], 10) : 0
 
       // Parse distance
       const distanceCell = row.querySelector(FARM_SELECTORS.distanceCell)
@@ -133,7 +136,10 @@ class FarmService {
       targets.push({
         villageId,
         coords,
+        x,
+        y,
         distance,
+        wallLevel: null,
         lastAttacked: null, // Would need to parse from page
         status,
       })
