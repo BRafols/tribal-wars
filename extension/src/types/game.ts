@@ -52,3 +52,18 @@ export interface Message<T = unknown> {
   type: MessageType
   payload: T
 }
+
+// Building queue types
+export interface BuildingQueueItem {
+  index: number           // Timer index (1-based)
+  endTimestamp: number    // Unix timestamp (seconds) when building completes
+  remainingSeconds: number // Seconds remaining until completion
+}
+
+export interface BuildingQueueData {
+  screen: string          // Current screen (e.g., "main" for building screen)
+  villageId: number       // Current village ID
+  orderCount: number      // Number of buildings in queue
+  serverTime: number      // Current server time (seconds)
+  queue: BuildingQueueItem[]
+}
