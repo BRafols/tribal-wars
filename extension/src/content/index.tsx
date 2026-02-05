@@ -2,7 +2,7 @@
 // Runs on game pages and manages game data extraction
 
 import type { Message } from '../types/game'
-import { getGameDataService, getBuildingQueueService } from '../core'
+import { getGameDataService, getBuildingQueueService, getRecruitmentService } from '../core'
 
 console.log('Tribal Wars Bot content script loaded')
 
@@ -14,6 +14,10 @@ gameDataService.init()
 const buildingQueueService = getBuildingQueueService()
 buildingQueueService.init()
 
+// Initialize the recruitment service for auto-recruiting units
+const recruitmentService = getRecruitmentService()
+recruitmentService.init()
+
 // Log data updates (for debugging)
 gameDataService.subscribe((data) => {
   console.log('Game data updated:', data)
@@ -24,6 +28,11 @@ buildingQueueService.subscribe((data) => {
   if (data.queue.length > 0) {
     console.log('Building queue updated:', data)
   }
+})
+
+// Log recruitment service status (for debugging)
+recruitmentService.subscribe((data) => {
+  console.log('Recruitment data updated:', data)
 })
 
 // Notify background that the game page is loaded
