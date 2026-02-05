@@ -19,12 +19,19 @@ import {
   isTaskCompleteMessage,
   isDashboardStateRequestMessage,
   isDashboardToggleBotMessage,
+  isFarmRegisterArrivalMessage,
+  isFarmGetArrivalsMessage,
+  isFarmClearArrivalsMessage,
   createTaskExecuteMessage,
   createDashboardStateResponseMessage,
+  createFarmArrivalsResponseMessage,
+  type FarmRegisterArrivalPayload,
+  type FarmGetArrivalsPayload,
 } from '../shared/messages'
 import { getStateManager } from './StateManager'
 import { getTabRegistry } from './TabRegistry'
 import { getTaskScheduler } from './TaskScheduler'
+import { getFarmStateManager } from './FarmStateManager'
 
 // Task type to role mapping
 const TASK_TYPE_TO_ROLE: Record<string, TabRoleType> = {
@@ -54,6 +61,10 @@ class TabCoordinator {
 
     const taskScheduler = getTaskScheduler()
     await taskScheduler.init()
+
+    // Initialize farm state manager for multi-village coordination
+    const farmStateManager = getFarmStateManager()
+    await farmStateManager.init()
 
     // Set up message listener
     chrome.runtime.onMessage.addListener(this.handleMessage.bind(this))
@@ -137,6 +148,25 @@ class TabCoordinator {
           message: 'Bot stopped',
         })
       }
+      sendResponse({ received: true })
+      return true
+    }
+
+    // Smart Farm coordination messages (can come from any tab)
+    if (isFarmRegisterArrivalMessage(message)) {
+      this.handleFarmRegisterArrival(message.payload)
+      sendResponse({ received: true })
+      return true
+    }
+
+    if (isFarmGetArrivalsMessage(message)) {
+      const response = this.handleFarmGetArrivals(message.payload)
+      sendResponse(response)
+      return true
+    }
+
+    if (isFarmClearArrivalsMessage(message)) {
+      this.handleFarmClearArrivals()
       sendResponse({ received: true })
       return true
     }
@@ -243,6 +273,72 @@ class TabCoordinator {
       title: 'Tribal Wars Bot Error',
       message: payload.message,
       priority: 1,
+    })
+  }
+
+  // ============ Smart Farm Coordination ============
+
+  private handleFarmRegisterArrival(payload: FarmRegisterArrivalPayload): void {
+    const farmStateManager = getFarmStateManager()
+    farmStateManager.registerArrival(
+      payload.targetCoords,
+      payload.arrivalTime,
+      payload.sourceVillageId
+    )
+
+    // Log the action
+    const stateManager = getStateManager()
+    stateManager.addActionLog({
+      level: 'success',
+      type: 'farm',
+      message: `Attack sent to ${payload.targetCoords}`,
+      villageId: payload.sourceVillageId,
+      details: {
+        arrivalTime: payload.arrivalTime,
+      },
+    })
+
+    // Update automation status
+    const stats = farmStateManager.getStatistics()
+    const scheduledAttacks = farmStateManager.getScheduledAttacks()
+    const nextArrival = scheduledAttacks.length > 0
+      ? Math.min(...scheduledAttacks.map(a => a.arrivalTime))
+      : null
+
+    stateManager.updateFarmingStatus({
+      status: 'running',
+      scheduledAttacks: stats.scheduledCount,
+      lastAttackSent: stats.lastAttackSent,
+      attacksToday: stats.attacksSentToday,
+      nextScheduledArrival: nextArrival,
+    })
+  }
+
+  private handleFarmGetArrivals(payload: FarmGetArrivalsPayload): ReturnType<typeof createFarmArrivalsResponseMessage> {
+    const farmStateManager = getFarmStateManager()
+    let arrivals: Record<string, number>
+
+    if (payload.targetCoords) {
+      // Get specific target
+      const arrivalTime = farmStateManager.getArrivalTime(payload.targetCoords)
+      arrivals = arrivalTime ? { [payload.targetCoords]: arrivalTime } : {}
+    } else {
+      // Get all arrivals
+      arrivals = farmStateManager.getAllArrivals()
+    }
+
+    return createFarmArrivalsResponseMessage({ arrivals })
+  }
+
+  private handleFarmClearArrivals(): void {
+    const farmStateManager = getFarmStateManager()
+    farmStateManager.clearArrivals()
+
+    const stateManager = getStateManager()
+    stateManager.addActionLog({
+      level: 'info',
+      type: 'farm',
+      message: 'Farm arrival history cleared',
     })
   }
 

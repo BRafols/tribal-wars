@@ -41,7 +41,8 @@ export function AutomationStatusSection({ automationStatus }: AutomationStatusSe
         status={farming.status}
         fields={[
           { label: 'Targets', value: farming.targetsAvailable },
-          { label: 'Last Attack', value: formatTime(farming.lastAttackSent) },
+          { label: 'Scheduled', value: farming.scheduledAttacks > 0 ? `${farming.scheduledAttacks} pending` : 'None' },
+          { label: 'Next Arrival', value: formatTimeRemaining(farming.nextScheduledArrival), highlight: farming.nextScheduledArrival !== null },
           { label: 'Today', value: `${farming.attacksToday} attacks` },
         ]}
       />

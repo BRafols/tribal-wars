@@ -192,8 +192,11 @@ export interface ScavengeState {
 export interface FarmTarget {
   villageId: number
   coords: string
+  x: number
+  y: number
   distance: number
   lastAttacked: number | null
+  wallLevel: number | null
   status: 'available' | 'attacking' | 'cooldown'
 }
 
@@ -202,6 +205,81 @@ export interface FarmState {
   lastPage: number
   totalPages: number
   lastChecked: number
+}
+
+// Smart Farm Assistant types
+export type UnitType =
+  | 'spear'
+  | 'sword'
+  | 'axe'
+  | 'archer'
+  | 'spy'
+  | 'light'
+  | 'marcher'
+  | 'heavy'
+  | 'ram'
+  | 'catapult'
+  | 'snob'
+
+// Unit speeds in minutes per field at speed 1
+export const UNIT_SPEEDS: Record<UnitType, number> = {
+  spy: 9,
+  light: 10,
+  marcher: 10,
+  heavy: 11,
+  spear: 18,
+  sword: 22,
+  axe: 18,
+  archer: 18,
+  ram: 30,
+  catapult: 30,
+  snob: 35,
+}
+
+export interface UnitInfo {
+  [unitId: string]: {
+    speed: number
+    pop: number
+    attack: number
+    defense: number
+  }
+}
+
+export interface WorldConfig {
+  speed: number
+  unitSpeed: number
+  worldId: string
+  fetchedAt: number
+}
+
+export interface FarmAttackTemplate {
+  id: 'A' | 'B'
+  units: Partial<Record<UnitType, number>>
+  slowestUnit: UnitType | null
+}
+
+export interface FarmAttackPlan {
+  targetId: string
+  targetCoords: string
+  sourceVillageId: number
+  template: 'A' | 'B'
+  sendTime: number
+  arrivalTime: number
+  travelTimeMs: number
+  status: 'pending' | 'sent' | 'failed'
+}
+
+export interface SmartFarmState {
+  // Target arrivals: targetCoords -> timestamp of last/next arrival
+  arrivals: Record<string, number>
+  // Scheduled attacks waiting to be sent
+  scheduledAttacks: FarmAttackPlan[]
+  // Attack history for statistics
+  attacksSentToday: number
+  lastAttackSent: number | null
+  // Configuration
+  enabled: boolean
+  targetIntervalMs: number
 }
 
 // Action Log types for side panel dashboard
@@ -228,8 +306,10 @@ export interface AutomationStatus {
   farming: {
     status: 'running' | 'idle' | 'disabled'
     targetsAvailable: number
+    scheduledAttacks: number
     lastAttackSent: number | null
     attacksToday: number
+    nextScheduledArrival: number | null
   }
   building: {
     status: 'running' | 'idle' | 'disabled'
