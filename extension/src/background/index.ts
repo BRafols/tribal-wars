@@ -18,6 +18,13 @@ chrome.runtime.onStartup.addListener(() => {
   coordinator.init()
 })
 
+// Open side panel when extension icon is clicked
+chrome.action.onClicked.addListener((tab) => {
+  if (tab.id) {
+    chrome.sidePanel.open({ tabId: tab.id })
+  }
+})
+
 // Keep service worker alive when there are active tasks
 // This uses the chrome.alarms API which persists across suspensions
 chrome.alarms.create('keepAlive', { periodInMinutes: 0.5 })

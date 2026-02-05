@@ -113,6 +113,35 @@ class TabCoordinator {
       return false
     }
 
+    // Dashboard messages don't come from tabs, handle them first
+    if (isDashboardStateRequestMessage(message)) {
+      const response = createDashboardStateResponseMessage({ state: this.getDashboardState() })
+      sendResponse(response)
+      return true
+    }
+
+    if (isDashboardToggleBotMessage(message)) {
+      const stateManager = getStateManager()
+      if (message.payload.enabled) {
+        stateManager.setRunning(true)
+        stateManager.addActionLog({
+          level: 'info',
+          type: 'system',
+          message: 'Bot started',
+        })
+      } else {
+        stateManager.setRunning(false)
+        stateManager.addActionLog({
+          level: 'info',
+          type: 'system',
+          message: 'Bot stopped',
+        })
+      }
+      sendResponse({ received: true })
+      return true
+    }
+
+    // Tab-specific messages require a tab ID
     const tabId = sender.tab?.id
     if (tabId === undefined) {
       console.warn('TabCoordinator: Message from unknown tab')
@@ -152,35 +181,6 @@ class TabCoordinator {
 
     if (message.type === MessageType.ERROR_REPORT) {
       this.handleErrorReport(tabId, message.payload as ErrorReportPayload)
-      sendResponse({ received: true })
-      return true
-    }
-
-    // Dashboard state request (from side panel/popup)
-    if (isDashboardStateRequestMessage(message)) {
-      const response = createDashboardStateResponseMessage({ state: this.getDashboardState() })
-      sendResponse(response)
-      return true
-    }
-
-    // Dashboard toggle bot
-    if (isDashboardToggleBotMessage(message)) {
-      const stateManager = getStateManager()
-      if (message.payload.enabled) {
-        stateManager.setRunning(true)
-        stateManager.addActionLog({
-          level: 'info',
-          type: 'system',
-          message: 'Bot started',
-        })
-      } else {
-        stateManager.setRunning(false)
-        stateManager.addActionLog({
-          level: 'info',
-          type: 'system',
-          message: 'Bot stopped',
-        })
-      }
       sendResponse({ received: true })
       return true
     }

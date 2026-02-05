@@ -76,6 +76,9 @@ export const Timing = {
   // Farm Assistant check interval
   FARM_CHECK_INTERVAL_MS: 60000,
 
+  // Minimum time between attack arrivals at same farm target (30 min)
+  FARM_TARGET_INTERVAL_MS: 1800000,
+
   // Building queue check interval
   BUILD_CHECK_INTERVAL_MS: 60000,
 
