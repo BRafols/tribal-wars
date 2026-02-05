@@ -1,0 +1,27 @@
+# Playwright MCP logs
+.playwright-mcp/
+
+# Claude Code local files
+.claude/settings.local.json
+.claude/processed-issues.txt
+
+# Screenshots
+*.png
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
