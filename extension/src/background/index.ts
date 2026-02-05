@@ -1,42 +1,34 @@
 // Background service worker for Tribal Wars Bot
-// Handles alarms, messaging, and orchestration
+// Handles multi-tab coordination and task scheduling
+
+import { getTabCoordinator } from './TabCoordinator'
 
 console.log('Tribal Wars Bot background service worker started')
 
-// Message types
-interface GameEvent {
-  type: string
-  payload: unknown
-}
-
-// Listen for messages from content script
-chrome.runtime.onMessage.addListener((message: GameEvent, sender, sendResponse) => {
-  console.log('Background received message:', message, 'from tab:', sender.tab?.id)
-
-  // Handle different message types
-  switch (message.type) {
-    case 'GAME_READY':
-      console.log('Game is ready on tab:', sender.tab?.id)
-      break
-    case 'GAME_EVENT':
-      console.log('Game event:', message.payload)
-      break
-    default:
-      console.log('Unknown message type:', message.type)
-  }
-
-  sendResponse({ received: true })
-  return true
+// Initialize the tab coordinator
+const coordinator = getTabCoordinator()
+coordinator.init().then(() => {
+  console.log('TabCoordinator initialized, status:', coordinator.getStatus())
 })
 
-// Set up alarms for periodic tasks
-chrome.alarms.create('checkQueue', { periodInMinutes: 1 })
+// Handle service worker activation/deactivation
+// MV3 service workers can be suspended, so we need to reinitialize on wake
+chrome.runtime.onStartup.addListener(() => {
+  console.log('Service worker starting up')
+  coordinator.init()
+})
+
+// Keep service worker alive when there are active tasks
+// This uses the chrome.alarms API which persists across suspensions
+chrome.alarms.create('keepAlive', { periodInMinutes: 0.5 })
 
 chrome.alarms.onAlarm.addListener((alarm) => {
-  console.log('Alarm triggered:', alarm.name)
-
-  if (alarm.name === 'checkQueue') {
-    // TODO: Check building queue status
+  if (alarm.name === 'keepAlive') {
+    // This just wakes up the service worker periodically
+    const status = coordinator.getStatus()
+    if (status.taskCount > 0 || status.tabCount > 0) {
+      console.log('Service worker keepalive, status:', status)
+    }
   }
 })
 
