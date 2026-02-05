@@ -2,12 +2,14 @@
 // when free completion (Finalizar) button is available (< 3 minutes remaining)
 
 import type { BuildingQueueData } from '../types/game'
+import { TaskType, Timing } from '../shared/constants'
+import type { ScheduledTask, TaskCompletePayload } from '../shared/types'
 import { getContentTicker } from './Ticker'
 
 type BuildingQueueListener = (data: BuildingQueueData) => void
 
 // Threshold in seconds for free completion (3 minutes)
-const FREE_COMPLETION_THRESHOLD = 180
+const FREE_COMPLETION_THRESHOLD = Timing.FREE_COMPLETION_THRESHOLD_SECONDS
 
 class BuildingQueueService {
   private data: BuildingQueueData | null = null
@@ -16,6 +18,7 @@ class BuildingQueueService {
   private messageHandler: ((event: MessageEvent) => void) | null = null
   private lastClickTime = 0
   private clickCooldown = 2000 // Minimum ms between click attempts
+  private tabAgent: { registerTaskHandler: (type: string, handler: (task: ScheduledTask) => Promise<TaskCompletePayload>) => void; unregisterTaskHandler: (type: string) => void } | null = null
 
   /**
    * Initialize the service - call once when content script loads
@@ -35,7 +38,73 @@ class BuildingQueueService {
     const ticker = getContentTicker()
     ticker.register('buildingQueue', () => this.requestUpdate(), 1000, { priority: 2 })
 
+    // Register task handlers if TabAgent is available (lazy import to avoid circular deps)
+    this.registerTaskHandlers()
+
     console.log('BuildingQueueService: Initialized')
+  }
+
+  /**
+   * Register task handlers with the TabAgent
+   */
+  private async registerTaskHandlers(): Promise<void> {
+    try {
+      // Dynamic import to avoid circular dependency
+      const { getTabAgent } = await import('../content/TabAgent')
+      this.tabAgent = getTabAgent()
+      this.tabAgent.registerTaskHandler(TaskType.BUILD_CHECK, this.handleCheckTask.bind(this))
+      this.tabAgent.registerTaskHandler(TaskType.BUILD_QUEUE, this.handleQueueTask.bind(this))
+    } catch {
+      // TabAgent not available yet, will be registered later
+    }
+  }
+
+  /**
+   * Handle BUILD_CHECK task
+   */
+  private async handleCheckTask(task: ScheduledTask): Promise<TaskCompletePayload> {
+    this.requestUpdate()
+
+    // Schedule next check based on queue status
+    let nextScheduledTime = Date.now() + Timing.BUILD_CHECK_INTERVAL_MS
+
+    if (this.data && this.data.queue.length > 0) {
+      const firstBuilding = this.data.queue[0]
+      if (firstBuilding && firstBuilding.remainingSeconds < FREE_COMPLETION_THRESHOLD) {
+        // Check more frequently when close to completion
+        nextScheduledTime = Date.now() + 5000
+      }
+    }
+
+    return {
+      taskId: task.id,
+      success: true,
+      data: { queueData: this.data },
+      nextScheduledTime,
+    }
+  }
+
+  /**
+   * Handle BUILD_QUEUE task (queue a specific building)
+   */
+  private async handleQueueTask(task: ScheduledTask): Promise<TaskCompletePayload> {
+    const buildingId = task.payload.buildingId as string
+
+    if (!buildingId) {
+      return {
+        taskId: task.id,
+        success: false,
+        error: 'No building ID specified',
+      }
+    }
+
+    // Request page script to queue the building
+    window.postMessage({ type: 'TW_BOT_QUEUE_BUILDING', data: { buildingId } }, '*')
+
+    return {
+      taskId: task.id,
+      success: true,
+    }
   }
 
   /**
@@ -49,6 +118,12 @@ class BuildingQueueService {
 
     const ticker = getContentTicker()
     ticker.unregister('buildingQueue')
+
+    // Unregister task handlers
+    if (this.tabAgent) {
+      this.tabAgent.unregisterTaskHandler(TaskType.BUILD_CHECK)
+      this.tabAgent.unregisterTaskHandler(TaskType.BUILD_QUEUE)
+    }
 
     this.listeners.clear()
     this.data = null
