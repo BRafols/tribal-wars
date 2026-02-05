@@ -31,12 +31,9 @@ chrome.runtime.sendMessage({ type: 'GAME_READY', payload: { url: window.location
 
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((message: Message, _sender, sendResponse) => {
-  console.log('Content script received message:', message)
-
   if (message.type === 'GET_WORLD_INFO') {
     const worldInfo = gameDataService.getData()
     const lastUpdated = gameDataService.getLastUpdated()
-    console.log('Sending world info:', worldInfo)
     sendResponse({ worldInfo, lastUpdated })
     return true
   }
