@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "Tribal Wars Bot",
+  "version": "0.1.0",
+  "description": "Automation assistant for Tribal Wars",
+  "permissions": [
+    "storage",
+    "alarms",
+    "tabs"
+  ],
+  "host_permissions": [
+    "*://*.guerrastribales.es/*",
+    "*://*.tribalwars.net/*",
+    "*://*.tribalwars.com/*",
+    "*://*.die-staemme.de/*",
+    "*://*.triburile.ro/*"
+  ],
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.guerrastribales.es/*",
+        "*://*.tribalwars.net/*",
+        "*://*.tribalwars.com/*",
+        "*://*.die-staemme.de/*",
+        "*://*.triburile.ro/*"
+      ],
+      "js": ["src/content/index.tsx"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "index.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

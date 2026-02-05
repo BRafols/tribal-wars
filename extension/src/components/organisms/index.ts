@@ -1,0 +1,1 @@
+export { WorldInfoCard } from './WorldInfoCard'
