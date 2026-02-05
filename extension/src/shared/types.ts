@@ -65,6 +65,28 @@ export interface BotConfig {
   villages: Record<number, VillageConfig>
 }
 
+// Build Queue types
+export interface BuildQueueItem {
+  id: string              // Unique ID for drag & drop
+  building: string        // e.g., "wood", "barracks", "main"
+  targetLevel: number     // Target level to reach
+  completed: boolean      // Has this milestone been reached
+}
+
+export interface BuildQueueConfig {
+  enabled: boolean
+  paused: boolean
+  queue: BuildQueueItem[]
+  resourceThresholdPct: number  // Minimum % of storage to keep after building
+}
+
+export interface BuildQueuePreset {
+  id: string
+  name: string
+  description: string
+  queue: Omit<BuildQueueItem, 'id' | 'completed'>[]
+}
+
 // Per-village configuration
 export interface VillageConfig {
   villageId: number

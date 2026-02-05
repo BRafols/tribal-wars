@@ -5,6 +5,7 @@ export type IconName =
   | 'connected' | 'disconnected'
   | 'scavenge' | 'farm' | 'build' | 'recruit' | 'tab' | 'clock' | 'play' | 'pause' | 'check' | 'error' | 'info' | 'warning'
   | 'refresh' | 'settings' | 'chevron-down' | 'chevron-up'
+  | 'drag' | 'delete' | 'skip' | 'add' | 'import' | 'export' | 'clear' | 'preset'
 
 interface IconProps {
   name: IconName
@@ -42,6 +43,14 @@ const iconMap: Record<IconName, string> = {
   settings: '\u{2699}',     // Gear
   'chevron-down': '\u{25BC}', // Down chevron
   'chevron-up': '\u{25B2}',   // Up chevron
+  'drag': '\u{2630}',         // Hamburger menu (drag handle)
+  'delete': '\u{1F5D1}',      // Trash can
+  'skip': '\u{23ED}',         // Skip forward
+  'add': '\u{2795}',          // Plus sign
+  'import': '\u{1F4E5}',      // Inbox tray
+  'export': '\u{1F4E4}',      // Outbox tray
+  'clear': '\u{1F6AE}',       // Clear/empty
+  'preset': '\u{1F4CB}',      // Clipboard/preset
 }
 
 export function Icon({ name, size = 16, className = '' }: IconProps) {

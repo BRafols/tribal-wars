@@ -489,6 +489,189 @@
     }
   }
 
+  // ============ AUTO-BUILD QUEUE ============
+
+  /**
+   * Get building data including resources and queue status
+   */
+  function getBuildingData() {
+    if (!window.game_data) return null;
+
+    const data = {
+      screen: window.game_data.screen || '',
+      villageId: window.game_data.village?.id || 0,
+      buildings: window.game_data.village?.buildings || {},
+      wood: 0,
+      stone: 0,
+      iron: 0,
+      storage: 1,
+      population: 0,
+      maxPopulation: 0,
+      queueCount: 0,
+      maxQueue: 2, // Default, updated below if premium
+    };
+
+    // Get resources from game_data
+    if (window.game_data.village) {
+      data.wood = parseInt(window.game_data.village.wood) || 0;
+      data.stone = parseInt(window.game_data.village.stone) || 0;
+      data.iron = parseInt(window.game_data.village.iron) || 0;
+      data.storage = parseInt(window.game_data.village.storage_max) || 1;
+      data.population = parseInt(window.game_data.village.pop) || 0;
+      data.maxPopulation = parseInt(window.game_data.village.pop_max) || 0;
+    }
+
+    // Check if premium queue is available (allows 2 buildings instead of 1)
+    if (window.premium && window.premium.has_account_manager) {
+      data.maxQueue = 5;
+    } else if (window.BuildingMain) {
+      data.maxQueue = window.BuildingMain.max_order || 2;
+    }
+
+    // Get current queue count
+    if (window.BuildingMain && typeof window.BuildingMain.order_count !== 'undefined') {
+      data.queueCount = window.BuildingMain.order_count;
+    }
+
+    return data;
+  }
+
+  function sendBuildingData() {
+    const data = getBuildingData();
+    window.postMessage({ type: 'TW_BOT_BUILDING_DATA', data: data }, '*');
+  }
+
+  /**
+   * Get building cost for a specific building
+   */
+  function getBuildingCost(buildingId) {
+    if (!window.BuildingMain || !window.BuildingMain.buildings) return null;
+
+    const building = window.BuildingMain.buildings[buildingId];
+    if (!building) return null;
+
+    return {
+      building: buildingId,
+      level: building.level || 0,
+      nextLevel: (building.level || 0) + 1,
+      wood: building.wood || 0,
+      stone: building.stone || 0,
+      iron: building.iron || 0,
+      pop: building.pop || 0,
+      buildTime: building.build_time || 0,
+      canBuild: building.can_build || false,
+      error: building.error || null,
+    };
+  }
+
+  function sendBuildingCost(buildingId) {
+    const cost = getBuildingCost(buildingId);
+    window.postMessage({ type: 'TW_BOT_BUILDING_COST', data: cost }, '*');
+  }
+
+  /**
+   * Queue a building for construction
+   */
+  function queueBuilding(buildingId, resourceThreshold) {
+    if (!window.game_data || window.game_data.screen !== 'main') {
+      window.postMessage({
+        type: 'TW_BOT_BUILD_RESULT',
+        data: { success: false, building: buildingId, error: 'Not on building screen' }
+      }, '*');
+      return;
+    }
+
+    // Check if BuildingMain exists
+    if (!window.BuildingMain || !window.BuildingMain.buildings) {
+      window.postMessage({
+        type: 'TW_BOT_BUILD_RESULT',
+        data: { success: false, building: buildingId, error: 'BuildingMain not available' }
+      }, '*');
+      return;
+    }
+
+    const building = window.BuildingMain.buildings[buildingId];
+    if (!building) {
+      window.postMessage({
+        type: 'TW_BOT_BUILD_RESULT',
+        data: { success: false, building: buildingId, error: 'Building not found' }
+      }, '*');
+      return;
+    }
+
+    // Check if building can be built
+    if (!building.can_build) {
+      window.postMessage({
+        type: 'TW_BOT_BUILD_RESULT',
+        data: { success: false, building: buildingId, error: building.error || 'Cannot build' }
+      }, '*');
+      return;
+    }
+
+    // Check resource threshold
+    const threshold = resourceThreshold || 20;
+    const village = window.game_data.village;
+    const storageMax = parseInt(village.storage_max) || 1;
+    const minReserve = Math.floor(storageMax * threshold / 100);
+
+    const currentWood = parseInt(village.wood) || 0;
+    const currentStone = parseInt(village.stone) || 0;
+    const currentIron = parseInt(village.iron) || 0;
+
+    const woodAfter = currentWood - (building.wood || 0);
+    const stoneAfter = currentStone - (building.stone || 0);
+    const ironAfter = currentIron - (building.iron || 0);
+
+    if (woodAfter < minReserve || stoneAfter < minReserve || ironAfter < minReserve) {
+      window.postMessage({
+        type: 'TW_BOT_BUILD_RESULT',
+        data: {
+          success: false,
+          building: buildingId,
+          error: `Would drop below ${threshold}% resource reserve`
+        }
+      }, '*');
+      return;
+    }
+
+    // Find and click the build button
+    const buildButton = document.querySelector(
+      `#main_buildrow_${buildingId} .btn-build, ` +
+      `a.btn-build[data-building="${buildingId}"], ` +
+      `a[onclick*="BuildingMain.build('${buildingId}')"]`
+    );
+
+    if (buildButton && !buildButton.classList.contains('btn-disabled')) {
+      console.log(`TW Bot: Clicking build button for ${buildingId}`);
+      buildButton.click();
+      window.postMessage({
+        type: 'TW_BOT_BUILD_RESULT',
+        data: { success: true, building: buildingId }
+      }, '*');
+    } else {
+      // Try using BuildingMain.build directly
+      if (typeof window.BuildingMain.build === 'function') {
+        try {
+          window.BuildingMain.build(buildingId);
+          window.postMessage({
+            type: 'TW_BOT_BUILD_RESULT',
+            data: { success: true, building: buildingId }
+          }, '*');
+        } catch (e) {
+          window.postMessage({
+            type: 'TW_BOT_BUILD_RESULT',
+            data: { success: false, building: buildingId, error: e.message }
+          }, '*');
+        }
+      } else {
+        window.postMessage({
+          type: 'TW_BOT_BUILD_RESULT',
+          data: { success: false, building: buildingId, error: 'Build button not found' }
+        }, '*');
+      }
+    }
+  }
+
   // ============ MESSAGE HANDLER ============
 
   window.addEventListener('message', function(event) {
@@ -510,6 +693,19 @@
         break;
       case 'TW_BOT_AUTO_RECRUIT':
         autoRecruit(event.data.config);
+        break;
+      case 'TW_BOT_REQUEST_BUILDING_DATA':
+        sendBuildingData();
+        break;
+      case 'TW_BOT_REQUEST_BUILDING_COST':
+        if (event.data.data && event.data.data.building) {
+          sendBuildingCost(event.data.data.building);
+        }
+        break;
+      case 'TW_BOT_QUEUE_BUILDING':
+        if (event.data.data && event.data.data.buildingId) {
+          queueBuilding(event.data.data.buildingId, event.data.data.resourceThreshold);
+        }
         break;
     }
   });

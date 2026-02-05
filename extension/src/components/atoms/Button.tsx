@@ -1,6 +1,6 @@
 import type { ReactNode, CSSProperties, ButtonHTMLAttributes } from 'react'
 
-type ButtonVariant = 'primary' | 'secondary' | 'success' | 'danger' | 'ghost'
+type ButtonVariant = 'primary' | 'secondary' | 'success' | 'danger' | 'ghost' | 'warning'
 type ButtonSize = 'sm' | 'md' | 'lg'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -34,6 +34,11 @@ const variantStyles: Record<ButtonVariant, CSSProperties> = {
     backgroundColor: 'transparent',
     color: '#e0e0e0',
     border: '1px solid #3a3a3a',
+  },
+  warning: {
+    backgroundColor: '#e65100',
+    color: '#fff',
+    border: 'none',
   },
 }
 

@@ -102,6 +102,7 @@ export const StorageKey = {
   CONFIG: 'tw_bot_config',
   LAST_ACTION_TIME: 'tw_bot_last_action_time',
   VILLAGE_SETTINGS: 'tw_bot_village_settings',
+  BUILD_QUEUE_CONFIG: 'tw_bot_build_queue_config',
 } as const
 
 // Message types for service worker <-> content script communication
